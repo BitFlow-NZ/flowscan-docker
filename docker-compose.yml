@@ -1,0 +1,75 @@
+version: "3.8"
+
+services:
+  csharp-backend:
+    build: ./API
+    ports:
+      - "5002:5001" # Map TCP traffic from host port 5000 to container port 80
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db;Database=ocr_recognition;User=dxy_katzchen;Password=katzchenpswd;
+    networks:
+      - flowscan-network
+
+  image-recognition:
+    build: ./image-recognition
+    ports:
+      - "5003:5001" # Map host port 5003 to container port 5001
+    depends_on:
+      - csharp-backend # Add this dependency
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=ap-southeast-2
+    volumes:
+      - ./image-recognition:/app
+      - cache-data:/app/cache
+    networks:
+      - flowscan-network
+
+  db:
+    image: mysql:8.0
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      MYSQL_ROOT_PASSWORD: katzchenpswd
+      MYSQL_DATABASE: ocr_recognition
+      MYSQL_USER: dxy_katzchen
+      MYSQL_PASSWORD: katzchenpswd
+    ports:
+      - "3307:3306" # Optional: Expose if needed locally, remove in production
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql # Optional initialization
+    networks:
+      - flowscan-network
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - REACT_APP_ENV=dev
+        - REACT_APP_API_URL=http://csharp-backend:5001
+        - REACT_APP_AWS_REGION=ap-southeast-2
+        - REACT_APP_AWS_BUCKET_NAME=flowscan-web
+        - REACT_APP_IMG_URL=https://bitflow-website.s3.ap-southeast-2.amazonaws.com
+    ports:
+      - "3000:80"
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - csharp-backend
+    networks:
+      - flowscan-network
+
+networks:
+  flowscan-network:
+
+volumes:
+  db-data:
+  cache-data:
