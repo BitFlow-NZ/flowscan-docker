@@ -4,7 +4,7 @@ services:
   csharp-backend:
     build: ./API
     ports:
-      - "5002:5001" # Map TCP traffic from host port 5000 to container port 80
+      - "5002:5001"
     depends_on:
       db:
         condition: service_healthy
@@ -20,9 +20,8 @@ services:
     depends_on:
       - csharp-backend # Add this dependency
     environment:
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_DEFAULT_REGION=ap-southeast-2
+      - VISION_KEY=${VISION_KEY}
+      - VISION_ENDPOINT=${VISION_ENDPOINT}
     volumes:
       - ./image-recognition:/app
       - cache-data:/app/cache
@@ -52,7 +51,6 @@ services:
   frontend:
     build:
       context: ./frontend
-
     ports:
       - "3000:80"
     env_file:
