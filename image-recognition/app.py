@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_swagger_ui import get_swaggerui_blueprint
-from Image_Reco import decode_gs1_barcode, image_reco_textract, fuzzy_match, fetch_items_from_api
+from Image_Reco import decode_gs1_barcode, fuzzy_match, fetch_items_from_api, image_reco_vision
 import pandas as pd
 import os
 
@@ -70,7 +70,7 @@ def process_image():
         #     return jsonify({"success": True, "data": gtin, "message": "Barcode decoded successfully"}), 200
 
         # Attempt to detect text
-        cleaned_output = image_reco_textract(image_url)
+        cleaned_output = image_reco_vision(image_url)
         if not cleaned_output:
             return jsonify({"success": False, "data": None, "message": "No text detected"}), 200
 
@@ -122,7 +122,7 @@ def extract_text():
             return jsonify({"success": False, "data": None, "message": "Image URL is required"}), 400
 
         # Extract text from the image
-        cleaned_output = image_reco_textract(image_url)
+        cleaned_output = image_reco_vision(image_url)
         if not cleaned_output:
             return jsonify({"success": False, "data": None, "message": "No text extracted"}), 200
         return jsonify({"success": True, "data": cleaned_output, "message": "Text extract successfully"}), 200
