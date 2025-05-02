@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API.Data.Migrations
 {
     [DbContext(typeof(StoreContext))]
-    [Migration("20250502190746_migration_v26")]
+    [Migration("20250502202726_migration_v26")]
     partial class migration_v26
     {
         /// <inheritdoc />
@@ -27,16 +27,22 @@ namespace API.Data.Migrations
 
             modelBuilder.Entity("API.Models.Entities.BarCode", b =>
                 {
-                    b.Property<int>("Type")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Content")
                         .HasColumnType("longtext");
 
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
                     b.Property<int>("UnitId")
                         .HasColumnType("int");
 
-                    b.HasKey("Type");
+                    b.HasKey("Id");
 
                     b.HasIndex("UnitId");
 
