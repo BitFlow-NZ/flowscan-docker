@@ -16,6 +16,7 @@ namespace API.Models.Entities
     }
     public class BarCode
     {
+        [Key]
         [Required]
         public required BarCodeType Type { get; set; }
 
