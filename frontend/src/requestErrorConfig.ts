@@ -27,7 +27,7 @@ interface ResponseStructure {
 export const errorConfig: RequestConfig = {
   baseURL:
     process.env.REACT_APP_API_URL ||
-    (location.hostname.includes('localhost') ? undefined : 'http://csharp-backend:5001'),
+    (location.hostname.includes('localhost') ? undefined : 'https://inflowcan.net/api/'),
   // baseURL: location.hostname.includes('localhost') ? undefined : 'http://bitflow-lb-586030793.ap-southeast-2.elb.amazonaws.com',
   // 错误处理： umi@3 的错误处理方案。
   errorConfig: {
