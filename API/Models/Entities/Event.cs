@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 
 
-namespace API.Entities
+
+namespace API.Models.Entities
+
 {
     /// <summary>
     /// Represents an event that is scheduled to take place.

@@ -8,6 +8,7 @@ using API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+
 namespace API.Controllers.Unit
 {
 
@@ -23,7 +24,7 @@ namespace API.Controllers.Unit
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<Entities.Unit>>> GetUnits()
+        public async Task<ActionResult<List<Models.Entities.Unit>>> GetUnits()
         {
             return await _context.Units
             .Include(u => u.Item)
@@ -31,7 +32,7 @@ namespace API.Controllers.Unit
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Entities.Unit>> GetUnit(int id)
+        public async Task<ActionResult<Models.Entities.Unit>> GetUnit(int id)
         {
             var unit = await _context.Units.FindAsync(id);
             if (unit == null) return NotFound();

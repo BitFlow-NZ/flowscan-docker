@@ -1,6 +1,6 @@
 
 using API.Data;
-using API.Entities;
+using API.Models.Entities;
 using API.Models.DTOs.Requests.Event;
 using API.Models.DTOs.Responses.Event;
 using API.Models.Response;

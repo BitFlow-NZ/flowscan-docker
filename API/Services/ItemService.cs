@@ -1,6 +1,6 @@
 using API.Data;
 using API.DTOs.Responses;
-using API.Entities;
+using API.Models.Entities;
 using API.Models.DTOs.Requests.Item;
 using API.Models.DTOs.Responses;
 using API.Models.DTOs.Responses.ImgRecognition;

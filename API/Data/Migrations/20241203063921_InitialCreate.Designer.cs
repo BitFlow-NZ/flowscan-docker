@@ -25,7 +25,7 @@ namespace API.Data.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("API.Entities.Event", b =>
+            modelBuilder.Entity("API.Models.Entities.Event", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -61,7 +61,7 @@ namespace API.Data.Migrations
                     b.ToTable("Events");
                 });
 
-            modelBuilder.Entity("API.Entities.EventItem", b =>
+            modelBuilder.Entity("API.Models.Entities.EventItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -95,7 +95,7 @@ namespace API.Data.Migrations
                     b.ToTable("EventItems");
                 });
 
-            modelBuilder.Entity("API.Entities.Item", b =>
+            modelBuilder.Entity("API.Models.Entities.Item", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -119,7 +119,7 @@ namespace API.Data.Migrations
                     b.ToTable("Items");
                 });
 
-            modelBuilder.Entity("API.Entities.OCRItem", b =>
+            modelBuilder.Entity("API.Models.Entities.OCRItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -146,7 +146,7 @@ namespace API.Data.Migrations
                     b.ToTable("OCRItems");
                 });
 
-            modelBuilder.Entity("API.Entities.Unit", b =>
+            modelBuilder.Entity("API.Models.Entities.Unit", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -168,21 +168,21 @@ namespace API.Data.Migrations
                     b.ToTable("Units");
                 });
 
-            modelBuilder.Entity("API.Entities.EventItem", b =>
+            modelBuilder.Entity("API.Models.Entities.EventItem", b =>
                 {
-                    b.HasOne("API.Entities.Event", "Event")
+                    b.HasOne("API.Models.Entities.Event", "Event")
                         .WithMany()
                         .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("API.Entities.Item", "Item")
+                    b.HasOne("API.Models.Entities.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("API.Entities.Unit", "Unit")
+                    b.HasOne("API.Models.Entities.Unit", "Unit")
                         .WithMany()
                         .HasForeignKey("UnitId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -195,15 +195,15 @@ namespace API.Data.Migrations
                     b.Navigation("Unit");
                 });
 
-            modelBuilder.Entity("API.Entities.OCRItem", b =>
+            modelBuilder.Entity("API.Models.Entities.OCRItem", b =>
                 {
-                    b.HasOne("API.Entities.Item", "Item")
+                    b.HasOne("API.Models.Entities.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("API.Entities.Unit", "Unit")
+                    b.HasOne("API.Models.Entities.Unit", "Unit")
                         .WithMany()
                         .HasForeignKey("UnitId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -214,9 +214,9 @@ namespace API.Data.Migrations
                     b.Navigation("Unit");
                 });
 
-            modelBuilder.Entity("API.Entities.Unit", b =>
+            modelBuilder.Entity("API.Models.Entities.Unit", b =>
                 {
-                    b.HasOne("API.Entities.Item", "Item")
+                    b.HasOne("API.Models.Entities.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemId")
                         .OnDelete(DeleteBehavior.Cascade)

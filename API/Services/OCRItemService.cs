@@ -1,6 +1,6 @@
 
 using API.Data;
-using API.Entities;
+using API.Models.Entities;
 using API.Models.DTOs.Requests.OCRItem;
 using API.Repositories;
 using API.Utils.Http;

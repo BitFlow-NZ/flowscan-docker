@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using API.Entities;
+using API.Models.Entities;
 using API.Models.DTOs.Base;
 using API.Models.DTOs.Responses;
 
