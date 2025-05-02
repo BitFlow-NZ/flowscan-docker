@@ -13,7 +13,50 @@ namespace API.Services
 
         public async Task<ItemOCRResponseDto?> SearchItemByBarCode(BarCodeRequestDto barCode)
         {
-            return await _barCodeRepository.SearchItemByBarCode(barCode);
+            BarCodeRequestDto FilteredBarCode = FilterBarCodeString(barCode);
+            return await _barCodeRepository.SearchItemByBarCode(FilteredBarCode);
+        }
+
+        private static BarCodeRequestDto FilterBarCodeString(BarCodeRequestDto barCodeRequestDto)
+        {
+
+            // length validation
+            BarcodeLengthValidation(barCodeRequestDto);
+
+            string code;
+            if (barCodeRequestDto.Type == BarCodeType.data_matrix || barCodeRequestDto.Type == BarCodeType.code_128)
+            {
+                //retireve 14 digit GTIN
+                try
+                {
+                    code = barCodeRequestDto.Content.Substring(2, 15);
+                }
+                catch (Exception)
+                {
+                    throw new ArgumentException("Invalid bar code content");
+                }
+            }
+            else
+            {
+                code = barCodeRequestDto.Content;
+            }
+
+            return new BarCodeRequestDto
+            {
+                Type = barCodeRequestDto.Type,
+                Content = code
+            };
+
+        }
+
+        private static void BarcodeLengthValidation(BarCodeRequestDto barCodeRequestDto)
+        {
+            if ((barCodeRequestDto.Type == BarCodeType.ean_13 && barCodeRequestDto.Content.Length != 13) ||
+                 (barCodeRequestDto.Type == BarCodeType.itf && barCodeRequestDto.Content.Length != 14) ||
+                 (barCodeRequestDto.Type == BarCodeType.upc_a && barCodeRequestDto.Content.Length != 12))
+            {
+                throw new ArgumentException("Invalid bar code length");
+            }
         }
     }
 }
