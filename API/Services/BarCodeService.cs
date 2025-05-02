@@ -29,7 +29,7 @@ namespace API.Services
                 //retireve 14 digit GTIN
                 try
                 {
-                    code = barCodeRequestDto.Content.Substring(2, 15);
+                    code = barCodeRequestDto.Content.Substring(2, 14);
                 }
                 catch (Exception)
                 {
