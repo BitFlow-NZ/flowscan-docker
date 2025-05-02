@@ -24,16 +24,23 @@ namespace API.Data.Migrations
 
             modelBuilder.Entity("API.Models.Entities.BarCode", b =>
                 {
-                    b.Property<int>("Type")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
                     b.Property<string>("Content")
+                        .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
 
                     b.Property<int>("UnitId")
                         .HasColumnType("int");
 
-                    b.HasKey("Type");
+                    b.HasKey("Id");
 
                     b.HasIndex("UnitId");
 

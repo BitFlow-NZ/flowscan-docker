@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using API.Data;
 using API.Filter;
 using API.Middleware;
+using API.Repositories;
 using API.Services;
 using API.Utils.Http;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,8 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<ImgService>();
 builder.Services.AddScoped<HttpRequestHelper>();
 builder.Services.AddScoped<OCRItemService>();
+builder.Services.AddScoped<BarCodeRepository>();
+builder.Services.AddScoped<BarCodeService>();
 
 // Add services to the container.
 builder.Services.AddControllers(options =>
@@ -27,6 +30,7 @@ builder.Services.AddControllers(options =>
 }).AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
 ;
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
