@@ -225,3 +225,11 @@ export async function getItemById(id: string) {
     method: 'GET',
   });
 }
+
+
+export async function getItemByCode(code: string) {
+  return request(`/api/Item/code/${code}`, {
+    method: 'GET',
+    skipErrorHandler: true,
+  });
+}

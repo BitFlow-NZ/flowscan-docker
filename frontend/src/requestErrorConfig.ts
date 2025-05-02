@@ -36,11 +36,20 @@ export const errorConfig: RequestConfig = {
       const { success, data, errorCode, errorMessage, showType } =
         res as unknown as ResponseStructure;
       if (!success) {
-        const error: any = new Error(errorMessage);
-        error.name = 'BizError';
-        error.info = { message, data };
-        throw error; // 抛出自制的错误
+        // 仅在明确指定需要抛错时再抛出
+        const shouldThrow = res.forceThrow || false;
+
+        if (shouldThrow) {
+          const error: any = new Error(errorMessage);
+          error.name = 'BizError';
+          error.info = { message: errorMessage, data };
+          throw error;
+        }
+
+        // ✅ 否则直接 return，不抛出
+        return;
       }
+
     },
     // 错误接收及处理
     errorHandler: (error: any, opts: any) => {

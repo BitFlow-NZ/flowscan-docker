@@ -9,9 +9,15 @@ interface AddItemCardProps {
 
 // Component to render a single item as a card
 const AddItemCard: React.FC<AddItemCardProps> = ({ items}) => {
+  console.log("items",items)
   return (
     <div>
       {items.map((item) => (
+        console.log("item",item),
+        console.log(item.id),
+        console.log(item.name),
+        console.log(item.description),
+        console.log(item.img),
         <Card key={item.id} style={{ width: '100%', marginTop: '10px' }}>
           <div
             style={{
