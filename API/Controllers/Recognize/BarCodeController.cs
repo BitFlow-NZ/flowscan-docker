@@ -28,15 +28,24 @@ namespace API.Controllers.Recognize
         [ProducesResponseType(typeof(ErrorResponse<string>), 404)]
         public async Task<ActionResult<SuccessResponse<List<ItemOCRResponseDto>>>> RecognizeBarCode(BarCodeRequestDto barCode)
         {
-            ItemOCRResponseDto? matchedItem = await _barCodeService.SearchItemByBarCode(barCode);
-            if (matchedItem == null)
+            try
             {
-                return NotFound(
-                new ErrorResponse<string>("Item not found"));
+                ItemOCRResponseDto? matchedItem = await _barCodeService.SearchItemByBarCode(barCode);
+                if (matchedItem == null)
+                {
+                    return NotFound(
+                    new ErrorResponse<string>("Item not found"));
+                }
+                List<ItemOCRResponseDto> responseContent = [matchedItem];
+                var result = new SuccessResponse<List<ItemOCRResponseDto>>(responseContent);
+                return Ok(result);
             }
-            List<ItemOCRResponseDto> responseContent = [matchedItem];
-            var result = new SuccessResponse<List<ItemOCRResponseDto>>(responseContent);
-            return Ok(result);
+            catch (Exception e)
+            {
+                return BadRequest(new ErrorResponse<string>(e.Message));
+            }
+
+
 
         }
     }
