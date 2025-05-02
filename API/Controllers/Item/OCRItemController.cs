@@ -2,6 +2,7 @@
 using API.Models.Response;
 using API.Services;
 using Microsoft.AspNetCore.Mvc;
+using API.Models.Entities;
 
 namespace API.Controllers.Item
 {
@@ -20,20 +21,20 @@ namespace API.Controllers.Item
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        [ProducesResponseType(typeof(SuccessResponse<List<Entities.OCRItem>>), 200)]
-        public async Task<ActionResult<SuccessResponse<List<Entities.OCRItem>>>> GetOCRItems()
+        [ProducesResponseType(typeof(SuccessResponse<List<OCRItem>>), 200)]
+        public async Task<ActionResult<SuccessResponse<List<OCRItem>>>> GetOCRItems()
         {
             var ocrItems = await _ocrItemService.GetOCRItemsAsync();
-            var result = new SuccessResponse<List<Entities.OCRItem>>(ocrItems);
+            var result = new SuccessResponse<List<OCRItem>>(ocrItems);
             return Ok(result);
         }
 
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(SuccessResponse<Entities.OCRItem>), 200)]
-        public async Task<ActionResult<SuccessResponse<Entities.OCRItem>>> GetOCRItem(int id)
+        [ProducesResponseType(typeof(SuccessResponse<OCRItem>), 200)]
+        public async Task<ActionResult<SuccessResponse<OCRItem>>> GetOCRItem(int id)
         {
             var ocrItem = await _ocrItemService.GetOCRItemAsync(id);
-            var result = new SuccessResponse<Entities.OCRItem>(ocrItem);
+            var result = new SuccessResponse<OCRItem>(ocrItem);
             return Ok(result);
         }
 

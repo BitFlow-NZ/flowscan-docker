@@ -1,6 +1,6 @@
 
 using System.Text.Json.Serialization;
-using API.Entities;
+using API.Models.Entities;
 using API.Models.DTOs.Base;
 using API.Models.DTOs.Responses;
 using API.Models.DTOs.Responses.Item;

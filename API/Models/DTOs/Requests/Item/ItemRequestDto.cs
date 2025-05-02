@@ -1,5 +1,5 @@
 
-using API.Entities;
+using API.Models.Entities;
 using API.Models.DTOs.Base; // Ensure this is the correct namespace for BaseItemDto
 
 

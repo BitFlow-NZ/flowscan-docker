@@ -1,6 +1,6 @@
 using API.Data;
 using API.DTOs;
-using API.Entities;
+using API.Models.Entities;
 using API.Models.DTOs.Requests.Unit;
 using API.Models.DTOs.Responses;
 using API.Repositories;

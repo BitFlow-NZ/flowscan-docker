@@ -1,5 +1,5 @@
 
-using API.Entities;
+using API.Models.Entities;
 
 
 namespace API.Models.DTOs.Responses

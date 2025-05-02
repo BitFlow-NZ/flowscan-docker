@@ -1,7 +1,7 @@
 using API.Data;
 using API.DTOs;
 using API.DTOs.Responses;
-using API.Entities;
+using API.Models.Entities;
 using API.Exceptions;
 using API.Models.DTOs.Requests;
 using API.Models.DTOs.Requests.EventItem;

@@ -1,5 +1,5 @@
 
-using API.Entities; // Add this line if Item class is in the Models namespace
+using API.Models.Entities; // Add this line if Item class is in the Models namespace
 
 namespace API.Data
 {

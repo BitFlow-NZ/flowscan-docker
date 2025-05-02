@@ -1,6 +1,6 @@
 
 using API.Data;
-using API.Entities;
+using API.Models.Entities;
 using API.Exceptions;
 
 using Microsoft.EntityFrameworkCore;
