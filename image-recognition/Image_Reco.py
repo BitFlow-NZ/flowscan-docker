@@ -5,7 +5,11 @@ from fuzzywuzzy import fuzz
 import requests
 from PIL import Image
 from io import BytesIO
-
+from azure.cognitiveservices.vision.computervision import ComputerVisionClient
+from azure.cognitiveservices.vision.computervision.models import OperationStatusCodes
+from msrest.authentication import CognitiveServicesCredentials
+import os
+import time
 
 # Define barcode detection function
 def decode_gs1_barcode(image_url):
@@ -56,6 +60,40 @@ def image_reco_textract(image_url):
         return ' '.join(line.strip() for line in detected_text if line.strip())
     else:
         return None
+
+def image_reco_vision(image_url):
+    '''
+    Authenticate and create Computer Vision client
+    '''
+    subscription_key = os.environ["VISION_KEY"]
+    endpoint = os.environ["VISION_ENDPOINT"]
+
+    computervision_client = ComputerVisionClient(endpoint, CognitiveServicesCredentials(subscription_key))
+
+    '''
+    OCR: Read File using the Read API, extract text - remote
+    '''
+    read_response = computervision_client.read(image_url, language="en", raw=True)
+
+    # Get the operation ID from the Operation-Location header
+    read_operation_location = read_response.headers["Operation-Location"]
+    operation_id = read_operation_location.split("/")[-1]
+
+    # Wait for the OCR operation to complete
+    while True:
+        read_result = computervision_client.get_read_result(operation_id)
+        if read_result.status not in ['notStarted', 'running']:
+            break
+        time.sleep(0.5)
+
+    # Collect detected text
+    all_text = []
+    if read_result.status == OperationStatusCodes.succeeded:
+        for text_result in read_result.analyze_result.read_results:
+            for line in text_result.lines:
+                all_text.append(line.text)
+
+    return ' '.join(all_text)
 
 # Define function to find most similar product using fuzzy matching
 def fuzzy_match(products_df, cleaned_text):
