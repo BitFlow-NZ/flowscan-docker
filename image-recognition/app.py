@@ -20,7 +20,6 @@ if not os.path.exists(cache_file):
         f.write("[]")  # Empty JSON array
         
 API_URL = "http://csharp-backend:5001/api/OCRItem"  # for ocr-server
-# API_URL = "http://bitflow-lb-586030793.ap-southeast-2.elb.amazonaws.com/api/OCRItem" # for ImageReco-Server
 
 # Swagger configuration
 SWAGGER_URL = '/swagger'
@@ -48,13 +47,14 @@ def update_cache_data():
     except Exception as e:
         print(f"An error occurred while updating cache: {e}")
 
-
+# Process an image for text recognition
 @app.route('/process-image', methods=['POST'])
 def process_image():
     try:
         # Check Content-Type
         if request.content_type != 'application/json':
-            return jsonify({"success": False, "data": None, "message": "Unsupported Media Type. Expected 'application/json'"}), 415
+            return jsonify(
+                {"success": False, "data": None, "message": "Unsupported Media Type. Expected 'application/json'"}), 415
 
         # Parse JSON body
         data = request.get_json()
@@ -64,10 +64,19 @@ def process_image():
         if not image_url:
             return jsonify({"success": False, "data": None, "message": "Please input image url"}), 400
 
-        # # Attempt to decode barcode
-        # gtin = decode_gs1_barcode(image_url)
-        # if gtin:
-        #     return jsonify({"success": True, "data": gtin, "message": "Barcode decoded successfully"}), 200
+        # Ensure cache is ready
+        try:
+            if not os.path.exists(cache_file) or os.stat(cache_file).st_size == 0:
+                print("Cache is empty or missing. Updating...")
+                update_cache_data()
+
+            ocr_items = pd.read_json(cache_file)
+            ocr_items_df = pd.DataFrame(ocr_items)
+            if ocr_items_df.empty:
+                return jsonify({"success": False, "data": None, "message": "Cache is empty or not updated."}), 500
+        except Exception as cache_error:
+            print(f"Error loading or updating cache: {cache_error}")
+            return jsonify({"success": False, "data": None, "message": "Cache is empty or not updated."}), 500
 
         # Attempt to detect text
         cleaned_output = image_reco_vision(image_url)
@@ -75,18 +84,17 @@ def process_image():
             return jsonify({"success": False, "data": None, "message": "No text detected"}), 200
 
         # Use the cache for matching
-        ocr_items = pd.read_json(cache_file)
-        ocr_items_df = pd.DataFrame(ocr_items)
-        if ocr_items_df is None or ocr_items_df.empty:
-            return jsonify({"success": False, "data": None, "message": "Cache is empty or not updated."}), 500
-
         matches = fuzzy_match(ocr_items_df, cleaned_output)
 
         # Check if matches are empty
         if not matches:
             return jsonify({"success": False, "data": None, "message": "No matched item"}), 200
 
-        return jsonify({"success": True, "data": [{'item_id': item_id, 'unit_id': unit_id} for item_id, unit_id, _ in matches], "message": "Match successfully"}), 200
+        return jsonify({
+            "success": True,
+            "data": [{'item_id': item_id, 'unit_id': unit_id} for item_id, unit_id, _ in matches],
+            "message": "Match successfully"
+        }), 200
 
     except Exception as e:
         return jsonify({"success": False, "data": None, "message": f"An unexpected error occurred: {str(e)}"}), 500
