@@ -288,6 +288,9 @@ const TakePicture = ({
                 onCapture={async (barcodes) => {
                   const codeData = barcodes?.[0];
                   const code = codeData?.rawValue;
+                  const fromat = codeData?.format;
+                  console.log('format:', fromat);
+                  console.log('code:', code);
 
                   if (!code) return;
 
