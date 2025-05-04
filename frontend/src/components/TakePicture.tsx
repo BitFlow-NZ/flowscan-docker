@@ -25,9 +25,13 @@ const TakePicture = ({
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>();
 
   const [barcodePaused, setBarcodePaused] = useState(false);
-  const lastScannedRef = useRef<{ code: string; timestamp: number }>({ code: '', timestamp: 0 });
+  // const lastScannedRef = useRef<{ code: string; timestamp: number }>({ code: '', timestamp: 0 });
   const isHandlingScanRef = useRef(false); // 🔒 是否正在处理中，避免连续调用
   const scannedCodes = useRef<Set<string>>(new Set());
+const lastScannedRef = useRef<string>(''); 
+ 
+
+  const SCAN_INTERVAL_MS = 3000;
   // Fetch available devices
   useEffect(() => {
     const getDevices = async () => {
@@ -163,7 +167,7 @@ const TakePicture = ({
       setImgSrc(null);
       setIsUploading(false);
     } finally {
-       setImgSrc(null);
+      setImgSrc(null);
       setIsUploading(false);
     }
   }, [webcamRef, onRecognitionSuccess]);
@@ -255,7 +259,7 @@ const TakePicture = ({
                   width: '100%',
                   top: 0,
                   left: 0,
-                  maxHeight: 250,
+                  height: '100%',
                   position: 'absolute',
                   objectFit: 'cover',
                   zIndex: 1,
@@ -294,14 +298,31 @@ const TakePicture = ({
 
                   if (!code) return;
 
-                  if (scannedCodes.current.has(code)) {
-                    // message.info('Already scanned this code.please clear the history.');
+                  // if (scannedCodes.current.has(code)) {
+                  //   // message.info('Already scanned this code.please clear the history.');
+                  //   return;
+                  // }
+                  // const now = Date.now();
+                  // const { code: lastCode, timestamp: lastTime } = lastScannedRef.current;
+
+                  // if (code === lastCode && now - lastTime < SCAN_INTERVAL_MS) {
+
+                  //   return;
+                  // }
+
+                  // lastScannedRef.current = { code, timestamp: now };
+
+                  // scannedCodes.current.add(code);
+
+                  // 只和上一个扫描值比较，不使用 Set
+                  if (code === lastScannedRef.current) {
+                    console.log('⚠️ Same as last scanned, skipping API call.');
                     return;
                   }
 
-                  scannedCodes.current.add(code);
+                  lastScannedRef.current = code; // 更新上一个扫描值
 
-                  console.log('📦 New Code scanned:', code);
+                  // console.log('📦 New Code scanned:', code);
                   try {
                     const response = await recognizeBarcode({ type: format, content: code });
 
@@ -319,7 +340,7 @@ const TakePicture = ({
                 }}
                 style={{
                   width: '100%',
-                  maxHeight: 250,
+                  height: '100%',
                   position: 'absolute',
                   objectFit: 'cover',
                   top: 0,
@@ -426,7 +447,7 @@ const TakePicture = ({
             <Button
               type="primary"
               onClick={() => setIsWebcamOpen(true)}
-              // style={{ marginRight: 20 }}
+              style={{ marginRight: 20 }}
             >
               Turn on
             </Button>
@@ -437,7 +458,7 @@ const TakePicture = ({
                 setIsWebcamOpen(false);
                 setImgSrc(null);
               }}
-              // style={{ marginRight: 20 }}
+              style={{ marginRight: 20 }}
             >
               Turn Off
             </Button>
@@ -451,14 +472,14 @@ const TakePicture = ({
               backgroundColor: isWebcamOpen ? '#1890ff' : '#f5f5f5', // Blue if webcam is open
               borderColor: isWebcamOpen ? '#1890ff' : '#d9d9d9',
               color: isWebcamOpen ? '#fff' : '#000',
-              marginLeft: 15,
+              marginLeft: 20,
             }}
           >
             {isUploading ? 'Uploading...' : 'Capture'}
           </Button>
-          <Button onClick={() => scannedCodes.current.clear()} style={{ marginLeft: 15 }}>
+          {/* <Button onClick={() => scannedCodes.current.clear()} style={{ marginLeft: 15 }}>
             Clear Scan History
-          </Button>
+          </Button> */}
         </div>
       </Flex>
     </div>

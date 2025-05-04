@@ -250,7 +250,7 @@ export async function recognizeBarcode(options?: { type: string; content: string
     };
   } catch (error: any) {
   
-    console.error('Barcode recognition error:', error);
+    // console.error('Barcode recognition error:', error);
 
     return {
       success: false,
