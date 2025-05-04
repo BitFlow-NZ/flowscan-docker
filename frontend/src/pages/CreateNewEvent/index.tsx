@@ -21,6 +21,8 @@ import { Item as ItemType, Unit, GlobalValue } from '../../type';
 import SearchItem from '../../components/SearchItem';
 import { createEvent } from '../../services/ant-design-pro/api';
 
+const MemoizedTakePicture = React.memo(TakePicture);
+
 const { Title } = Typography;
 
 const CreateNewEvent: React.FC = () => {
@@ -35,6 +37,7 @@ const CreateNewEvent: React.FC = () => {
     editorName: '',
   });
 
+
   const [firstForm] = Form.useForm();
   const [secondForm] = Form.useForm();
 
@@ -46,6 +49,7 @@ const CreateNewEvent: React.FC = () => {
   const handleRecognitionSuccess = useCallback((recognizedItems: ItemType[]) => {
     setSearchResults(recognizedItems);
   }, []);
+  
   useEffect(() => {
     console.log('📸 TakePicture mounted');
     return () => console.log('📸 TakePicture unmounted');
@@ -298,7 +302,8 @@ const CreateNewEvent: React.FC = () => {
             <Flex vertical style={{ marginRight: 'auto', width: 600 }}>
               <div>
                 <Title level={5}>Image Camera</Title>
-                <TakePicture onRecognitionSuccess={handleRecognitionSuccess} />
+                {/* <TakePicture onRecognitionSuccess={handleRecognitionSuccess} /> */}
+                <MemoizedTakePicture onRecognitionSuccess={handleRecognitionSuccess} />
               </div>
 
               <div>

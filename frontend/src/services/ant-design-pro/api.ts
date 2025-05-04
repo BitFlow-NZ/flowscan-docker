@@ -227,9 +227,11 @@ export async function getItemById(id: string) {
 }
 
 
-export async function getItemByCode(code: string) {
-  return request(`/api/Item/code/${code}`, {
-    method: 'GET',
+export async function recognizeBarcode(options?: { type: string; content: string }) {
+  return request('/api/BarCode/recognize', {
+    method: 'POST',
+    data: options,
     skipErrorHandler: true,
   });
 }
+

@@ -4,7 +4,7 @@ import Webcam from 'react-webcam';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import { Button, Empty, Typography, Flex, Popover, message, Select } from 'antd';
 import { Item } from '../type';
-import { imageRecognition,getItemByCode } from '@/services/ant-design-pro/api';
+import { imageRecognition, recognizeBarcode } from '@/services/ant-design-pro/api';
 import { BarcodeScanner } from 'react-barcode-scanner';
 
 const ExamplePicture = `${window.ENV?.REACT_APP_IMG_URL}/image/Example+Picture.jpg`;
@@ -288,8 +288,8 @@ const TakePicture = ({
                 onCapture={async (barcodes) => {
                   const codeData = barcodes?.[0];
                   const code = codeData?.rawValue;
-                  const fromat = codeData?.format;
-                  console.log('format:', fromat);
+                  const format = codeData?.format;
+                  console.log('format:', format);
                   console.log('code:', code);
 
                   if (!code) return;
@@ -303,7 +303,7 @@ const TakePicture = ({
 
                   console.log('📦 New Code scanned:', code);
                   try {
-                    const response = await getItemByCode(encodeURIComponent(code));
+                    const response = await recognizeBarcode({ type: format, content: code });
 
                     if (response?.success) {
                       onRecognitionSuccess(response.data);

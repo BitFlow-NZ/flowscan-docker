@@ -1,6 +1,6 @@
 export default {
-  'GET /api/Item/code/:code': (req: any, res: any) => {
-    const { code } = req.params;
+  'POST /api/BarCode/recognize': (req: any, res: any) => {
+    const { type, content } = req.body;
 
     const items = [
       {
@@ -67,10 +67,11 @@ export default {
       },
     ];
 
-    // 查找所有匹配该 code 的 unit
     const matched = items
       .map((item) => {
-        const matchedUnits = item.units.filter((u) => u.barcode === code || u.qrcode === code);
+        const matchedUnits = item.units.filter(
+          (u) => u.barcode === content || u.qrcode === content,
+        );
         if (matchedUnits.length > 0) {
           return {
             ...item,
@@ -80,13 +81,12 @@ export default {
         return null;
       })
       .filter(Boolean);
-      console.log('matched', matched);
 
     if (matched.length > 0) {
       res.send({
         success: true,
         data: matched,
-        message: 'Matched item(s) by barcode or QR code',
+        message: `Matched item(s) by ${type}`,
       });
     } else {
       res.send({
