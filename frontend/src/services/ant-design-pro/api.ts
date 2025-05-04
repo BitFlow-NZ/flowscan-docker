@@ -227,11 +227,39 @@ export async function getItemById(id: string) {
 }
 
 
+// export async function recognizeBarcode(options?: { type: string; content: string }) {
+//   return request('/api/BarCode/recognize', {
+//     method: 'POST',
+//     data: options,
+//     skipErrorHandler: true,
+//   });
+// }
+
 export async function recognizeBarcode(options?: { type: string; content: string }) {
-  return request('/api/BarCode/recognize', {
-    method: 'POST',
-    data: options,
-    skipErrorHandler: true,
-  });
+  try {
+    const response = await request('/api/BarCode/recognize', {
+      method: 'POST',
+      data: options,
+      skipErrorHandler: true,
+    });
+
+    return {
+      success: true,
+      data: response.data,
+      message: response.message || 'Item found',
+    };
+  } catch (error: any) {
+  
+    console.error('Barcode recognition error:', error);
+
+    return {
+      success: false,
+      data: null,
+      message:
+        error?.data?.message ||
+        error?.response?.data?.message || 
+        'Scan failed. Try capturing an image.',
+    };
+  }
 }
 
