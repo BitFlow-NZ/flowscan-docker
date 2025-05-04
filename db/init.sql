@@ -1,21 +1,44 @@
 /*
  Navicat Premium Dump SQL
 
- Source Server         : bitflow-remote-imgReco
+ Source Server         : ocr_docker
  Source Server Type    : MySQL
- Source Server Version : 80039 (8.0.39)
- Source Host           : bitflow-rds.c56ooo4mgx8j.ap-southeast-2.rds.amazonaws.com:3306
+ Source Server Version : 80041 (8.0.41)
+ Source Host           : localhost:3307
  Source Schema         : ocr_recognition
 
  Target Server Type    : MySQL
- Target Server Version : 80039 (8.0.39)
+ Target Server Version : 80041 (8.0.41)
  File Encoding         : 65001
 
- Date: 09/03/2025 13:45:26
+ Date: 04/05/2025 17:38:02
 */
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+-- Table structure for BarCodes
+-- ----------------------------
+DROP TABLE IF EXISTS `BarCodes`;
+CREATE TABLE `BarCodes` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `Type` int NOT NULL,
+  `Content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `UnitId` int NOT NULL,
+  PRIMARY KEY (`Id`),
+  KEY `IX_BarCodes_UnitId` (`UnitId`),
+  CONSTRAINT `FK_BarCodes_Units_UnitId` FOREIGN KEY (`UnitId`) REFERENCES `Units` (`Id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- ----------------------------
+-- Records of BarCodes
+-- ----------------------------
+BEGIN;
+INSERT INTO `BarCodes` (`Id`, `Type`, `Content`, `UnitId`) VALUES (1, 1, '01108853800317171726123110TS24010041', 1001079);
+INSERT INTO `BarCodes` (`Id`, `Type`, `Content`, `UnitId`) VALUES (2, 0, '0104064035052133', 1001081);
+INSERT INTO `BarCodes` (`Id`, `Type`, `Content`, `UnitId`) VALUES (3, 2, '5030267073689', 1001098);
+COMMIT;
 
 -- ----------------------------
 -- Table structure for Credentials
@@ -3696,6 +3719,8 @@ INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('2
 INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('20250115022340_migration_v23', '8.0.11');
 INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('20250204083513_migration_v24', '8.0.11');
 INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('20250204101634_migration_v25', '8.0.11');
+INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('20250502202726_migration_v26', '8.0.11');
+INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('20250502212624_migration_v27', '8.0.11');
 COMMIT;
 
 SET FOREIGN_KEY_CHECKS = 1;
