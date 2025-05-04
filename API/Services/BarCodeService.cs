@@ -24,7 +24,7 @@ namespace API.Services
             BarcodeLengthValidation(barCodeRequestDto);
 
             string code;
-            if (barCodeRequestDto.Type == BarCodeType.data_matrix || barCodeRequestDto.Type == BarCodeType.code_128)
+            if (barCodeRequestDto.Type == BarCodeType.data_matrix)
             {
                 //retireve 14 digit GTIN
                 try
@@ -33,7 +33,7 @@ namespace API.Services
                 }
                 catch (Exception)
                 {
-                    throw new ArgumentException("Invalid bar code content");
+                    throw new ArgumentException("Invalid bar code length");
                 }
             }
             else
