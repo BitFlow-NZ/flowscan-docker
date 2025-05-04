@@ -23,6 +23,7 @@ const QuickScan: React.FC = () => {
               <Title level={5}>Image Camera</Title>
               <TakePicture
                 onRecognitionSuccess={(recognizedItems: Item[]) =>
+                  
                   setSearchResults(recognizedItems)
                 }
               />

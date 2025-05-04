@@ -13,6 +13,8 @@ export interface Item {
   img: string;
   description: string;
   defaultUnitId: number | null;
+  barcode: string | null;
+  qrcode: string | null;
   units: Unit[];
   quantity: number;
   selectedUnit: Unit | null;

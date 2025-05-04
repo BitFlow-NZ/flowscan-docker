@@ -7,14 +7,16 @@ info:
 paths:
   /process-image:
     post:
-      summary: Process an image for barcode or text recognition
-      description: Decodes a GS1 barcode or extracts text from the provided image URL.
+      summary: Process an image for text recognition
+      description: Extracts text from the provided image URL and matches it with cached pharmacy items.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - image_url
               properties:
                 image_url:
                   type: string
@@ -22,26 +24,13 @@ paths:
                   example: https://example.com/image.jpg
       responses:
         '200':
-          description: Success
+          description: Success or expected failure in matching
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "string"
-                    description: |
-                      Possible values:
-                      - "Barcode decoded successfully" - Barcode decoded successfully
-                      - "Match successfully" - Item match successfully
-                      - "No text detected" - No text was found in the image.
-                      - "No matched item" - OCR result didn't match any cached items.
                 oneOf:
-                  - description: Successful response with matched items
+                  - type: object
+                    description: Matched items returned
                     properties:
                       success:
                         type: boolean
@@ -56,31 +45,35 @@ paths:
                             unit_id:
                               type: integer
                         example: [{"item_id": 1, "unit_id": 1}, {"item_id": 2, "unit_id": 1}]
-
-                  - description: Successful response but no text detected
+                      message:
+                        type: string
+                        example: "Match successfully"
+                  - type: object
+                    description: No text detected
                     properties:
                       success:
                         type: boolean
                         example: false
                       data:
-                        type: string
+                        type: "null"
+                        nullable: true
                         example: null
                       message:
                         type: string
                         example: "No text detected"
-
-                  - description: Successful response but no matched items
+                  - type: object
+                    description: No matched item
                     properties:
                       success:
                         type: boolean
                         example: false
                       data:
-                        type: string
+                        type: "null"
+                        nullable: true
                         example: null
                       message:
                         type: string
                         example: "No matched item"
-
         '400':
           description: Bad Request
           content:
@@ -92,7 +85,8 @@ paths:
                     type: boolean
                     example: false
                   data:
-                    type: string
+                    type: "null"
+                    nullable: true
                     example: null
                   message:
                     type: string
@@ -108,13 +102,14 @@ paths:
                     type: boolean
                     example: false
                   data:
-                    type: string
+                    type: "null"
+                    nullable: true
                     example: null
                   message:
                     type: string
                     example: "Unsupported Media Type. Expected 'application/json'"
         '500':
-          description: Internal Server Error
+          description: Internal Server Error (e.g., cache missing or unexpected exception)
           content:
             application/json:
               schema:
@@ -124,11 +119,12 @@ paths:
                     type: boolean
                     example: false
                   data:
-                    type: string
+                    type: "null"
+                    nullable: true
                     example: null
                   message:
                     type: string
-                    example: "An unexpected error occurred: <error details>"
+                    example: "Cache is empty or not updated."
 
   /decode-barcode:
     post:

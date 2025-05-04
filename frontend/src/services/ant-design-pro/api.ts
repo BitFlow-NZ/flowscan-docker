@@ -225,3 +225,13 @@ export async function getItemById(id: string) {
     method: 'GET',
   });
 }
+
+
+export async function recognizeBarcode(options?: { type: string; content: string }) {
+  return request('/api/BarCode/recognize', {
+    method: 'POST',
+    data: options,
+    skipErrorHandler: true,
+  });
+}
+
