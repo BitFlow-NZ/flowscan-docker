@@ -23,3 +23,8 @@ to run built docker image
 4. Go to [http://localhost:3000](http://localhost:3000)
 
 5. press `ctrl`+`c` to stop the service
+
+## Backend swagger url
+
+- .NET service: [http://localhost:5002/](http://localhost:5002)
+- OCR service: [http://localhost:5003/swagger](http://localhost:5003/swagger)
