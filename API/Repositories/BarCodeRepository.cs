@@ -22,6 +22,7 @@ namespace API.Repositories
 
             var matchedUnit = await _context.Units
                 .Include(i => i.Item)
+                    .ThenInclude(item => item.Units)
                 .FirstOrDefaultAsync(i => i.Id == matchedUnitId);
 
             var matchedItem = matchedUnit!.Item;
