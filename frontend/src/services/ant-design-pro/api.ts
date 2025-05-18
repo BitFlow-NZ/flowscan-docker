@@ -263,3 +263,47 @@ export async function recognizeBarcode(options?: { type: string; content: string
   }
 }
 
+
+// get presigned URL for S3 upload
+// export async function getPresignedUrl_Captured(fileType: string) {
+//   return request<{
+//     uploadUrl: string;
+//     publicUrl: string;
+//     fileKey: string;
+//   }>('/api/Upload/get-presigned-url', {
+//     method: 'POST',
+//     data: {
+//       fileType,
+//       fileExtension: 'png',
+//       folder: 'captured-image',
+//     },
+//   });
+// }
+
+// services/api.ts
+export async function getPresignedUrl(
+  fileType: string,
+  folder: string,
+  fileExtension = 'png',
+) {
+  return request<{
+    uploadUrl: string;
+    publicUrl: string;
+    fileKey: string;
+  }>('api/Upload/get-presigned-url', {
+    method: 'POST',
+    data: {
+      fileType,
+      fileExtension,
+      folder,
+    },
+  });
+}
+
+
+// https://inflowcan.net/api/upload/get-presigned-url
+///api/Upload/get-presigned-url
+
+
+
+

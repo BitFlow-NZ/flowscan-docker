@@ -10,6 +10,9 @@ services:
         condition: service_healthy
     environment:
       - ConnectionStrings__DefaultConnection=Server=db;Database=${DB_NAME};User=${DB_USER};Password=${DB_PASSWORD};
+      - AWS_ACCESS_KEY_ID=${REACT_APP_AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${REACT_APP_AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${REACT_APP_AWS_REGION}
     networks:
       - flowscan-network
 
@@ -24,7 +27,7 @@ services:
       - VISION_ENDPOINT=${VISION_ENDPOINT}
     volumes:
       - ./image-recognition:/app
-      - cache-data:/app/cache
+      - cache-data:/tmp/flowscan-cache
     networks:
       - flowscan-network
 
