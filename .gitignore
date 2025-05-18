@@ -1,3 +1,23 @@
+# Environment variables
 .env
-.DS_Store
 
+# macOS files
+.DS_Store
+**/.DS_Store
+
+# Node modules
+/frontend/node_modules
+**/node_modules
+
+# Vite cache and dependencies
+.vite/
+.vite
+
+
+# F# fake build directories
+.fake
+.ionide
+
+# Build outputs
+/dist
+/build
