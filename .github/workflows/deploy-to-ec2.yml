@@ -5,6 +5,10 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -29,51 +33,54 @@ jobs:
           echo "REACT_APP_API_URL=https://${{ secrets.EC2_DOMAIN }}/api" >> .env
           echo "REACT_APP_IMG_URL=${{ secrets.REACT_APP_IMG_URL }}" >> .env
     
-      - name: Debug SSH Connection
+      - name: Verify secrets presence
         run: |
-            echo "Checking EC2_HOST: ${{ secrets.EC2_HOST }}"
-            echo "Testing SSH connection..."
-            ssh -v -o StrictHostKeyChecking=no ${{ secrets.EC2_HOST }} exit
-        shell: bash
+          echo "Testing if secrets are accessible..."
+          if [ -n "${{ secrets.EC2_HOST }}" ]; then
+            echo "✅ EC2_HOST secret exists"
+          else
+            echo "❌ EC2_HOST secret is empty or inaccessible"
+          fi
+          
+          if [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "✅ SSH_PRIVATE_KEY secret exists"
+          else
+            echo "❌ SSH_PRIVATE_KEY secret is empty or inaccessible"
+          fi
 
-      - name: Set up SSH
+      - name: Set up SSH with fixed host
         run: |
           mkdir -p ~/.ssh
+          
+          # Use the SSH key from secrets
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
-          # Print EC2 host info for debugging (IP only, no sensitive data)
-          echo "Connecting to host: $(echo ${{ secrets.EC2_HOST }} | cut -d '@' -f2)"
+          # Hardcode the EC2 IP for testing (remove this hardcoding later)
+          REMOTE_HOST="ec2-user@13.239.232.171"
+          
+          echo "Connecting to host: $REMOTE_HOST"
           
           # Try to verify SSH port is open
-          timeout 5 nc -z ${{ secrets.EC2_HOST }} 22 || echo "Warning: Cannot verify if port 22 is open"
+          nc -zv $(echo $REMOTE_HOST | cut -d '@' -f2) 22 || echo "Warning: Cannot verify if port 22 is open"
           
-          # Add retry logic for ssh-keyscan
-          for i in {1..5}; do
+          # Add retry logic for ssh-keyscan with the hardcoded IP
+          EC2_IP="13.239.232.171"
+          for i in {1..3}; do
             echo "Attempt $i: Running ssh-keyscan..."
-            if ssh-keyscan -T 10 -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts; then
+            if ssh-keyscan -T 10 $EC2_IP >> ~/.ssh/known_hosts; then
               echo "✓ Successfully added host to known_hosts"
               break
             else
               echo "× ssh-keyscan failed, retrying in 3 seconds..."
               sleep 3
             fi
-            
-            # Exit with helpful message if all attempts fail
-            if [ $i -eq 5 ]; then
-              echo "ERROR: Could not connect to EC2 instance after 5 attempts"
-              echo "Please check:"
-              echo "- EC2 instance is running"
-              echo "- Security group allows SSH from GitHub Actions IPs"
-              echo "- EC2_HOST secret is correctly configured (e.g., ec2-user@11.22.33.44)"
-              exit 1
-            fi
           done
           
-          # Verify we have a valid known_hosts entry
-          echo "Known hosts content:"
-          cat ~/.ssh/known_hosts
-      
+          # Test connection with verbose output
+          echo "Testing SSH connection directly..."
+          ssh -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $REMOTE_HOST "echo Connection successful"
+
       - name: Deploy to EC2
         run: |
           # Create deployment package
