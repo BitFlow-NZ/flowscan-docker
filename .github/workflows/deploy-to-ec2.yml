@@ -16,66 +16,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 2  # Need history to detect changes
-
-      - name: Detect changed files
-        id: changes
-        run: |
-          # Default to rebuilding everything for workflow_dispatch events
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "api_changed=true" >> $GITHUB_OUTPUT
-            echo "frontend_changed=true" >> $GITHUB_OUTPUT
-            echo "ocr_changed=true" >> $GITHUB_OUTPUT
-            echo "db_changed=true" >> $GITHUB_OUTPUT
-            echo "config_changed=true" >> $GITHUB_OUTPUT
-            echo "All services will be rebuilt (manual trigger)"
-            exit 0
-          fi
-
-          # For push events, detect changed files
-          git diff --name-only HEAD^ HEAD > changed_files.txt
-          
-          # Check for changes in each component
-          if grep -q "API/" changed_files.txt; then
-            echo "api_changed=true" >> $GITHUB_OUTPUT
-            echo "Backend API changes detected"
-          else
-            echo "api_changed=false" >> $GITHUB_OUTPUT
-          fi
-          
-          if grep -q "frontend/" changed_files.txt; then
-            echo "frontend_changed=true" >> $GITHUB_OUTPUT
-            echo "Frontend changes detected"
-          else
-            echo "frontend_changed=false" >> $GITHUB_OUTPUT
-          fi
-          
-          if grep -q "image-recognition/" changed_files.txt; then
-            echo "ocr_changed=true" >> $GITHUB_OUTPUT
-            echo "OCR service changes detected"
-          else
-            echo "ocr_changed=false" >> $GITHUB_OUTPUT
-          fi
-          
-          if grep -q "db/" changed_files.txt; then
-            echo "db_changed=true" >> $GITHUB_OUTPUT
-            echo "Database changes detected"
-          else
-            echo "db_changed=false" >> $GITHUB_OUTPUT
-          fi
-          
-          # Docker-compose or env changes require full rebuild
-          if grep -q "docker-compose.yml\|\.env" changed_files.txt; then
-            echo "config_changed=true" >> $GITHUB_OUTPUT
-            echo "Configuration changes detected - will rebuild all"
-          else
-            echo "config_changed=false" >> $GITHUB_OUTPUT
-          fi
-          
-          # Print changed files for debugging
-          echo "Changed files:"
-          cat changed_files.txt
 
       - name: Create .env file
         run: |
@@ -108,7 +48,7 @@ jobs:
             echo "❌ SSH_PRIVATE_KEY secret is empty or inaccessible"
           fi
 
-      - name: Set up SSH
+      - name: Set up SSH with fixed host
         run: |
           mkdir -p ~/.ssh
           
@@ -116,7 +56,8 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
-          REMOTE_HOST=${{secrets.EC2_HOST}}
+          # Hardcode the EC2 IP for testing (remove this hardcoding later)
+          REMOTE_HOST="ec2-user@13.239.232.171"
           
           echo "Connecting to host: $REMOTE_HOST"
           
@@ -140,63 +81,28 @@ jobs:
           echo "Testing SSH connection directly..."
           ssh -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $REMOTE_HOST "echo Connection successful"
 
-      - name: Deploy to EC2 with selective rebuilds
+      - name: Deploy to EC2
         run: |
           # Create deployment package
           tar -czf deploy.tar.gz .env docker-compose.yml API/ frontend/ image-recognition/ db/ nginx/
           
           # Ensure the target directory exists on EC2
-          ssh -i ~/.ssh/id_rsa $REMOTE_HOST "mkdir -p ~/flowscan-app/"
+          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_HOST }} "mkdir -p ~/flowscan-app/"
 
           # Transfer files
-          scp -i ~/.ssh/id_rsa deploy.tar.gz $REMOTE_HOST:~/flowscan-app/
-          
-          # Prepare build commands based on changed components
-          BUILD_COMMAND=""
-          if [[ "${{ steps.changes.outputs.config_changed }}" == "true" ]]; then
-            # Full rebuild if configuration changed
-            BUILD_COMMAND="docker-compose build --no-cache"
-            echo "Configuration changes detected - rebuilding all services"
-          else
-            # Selective rebuilds
-            SERVICES_TO_BUILD=""
-            
-            if [[ "${{ steps.changes.outputs.api_changed }}" == "true" ]]; then
-              SERVICES_TO_BUILD="$SERVICES_TO_BUILD csharp-backend"
-            fi
-            
-            if [[ "${{ steps.changes.outputs.frontend_changed }}" == "true" ]]; then
-              SERVICES_TO_BUILD="$SERVICES_TO_BUILD frontend"
-            fi
-            
-            if [[ "${{ steps.changes.outputs.ocr_changed }}" == "true" ]]; then
-              SERVICES_TO_BUILD="$SERVICES_TO_BUILD image-recognition"
-            fi
-            
-            if [[ "${{ steps.changes.outputs.db_changed }}" == "true" ]]; then
-              SERVICES_TO_BUILD="$SERVICES_TO_BUILD db"
-            fi
-            
-            if [[ -n "$SERVICES_TO_BUILD" ]]; then
-              BUILD_COMMAND="docker-compose build --no-cache $SERVICES_TO_BUILD"
-              echo "Rebuilding specific services: $SERVICES_TO_BUILD"
-            else
-              echo "No service changes detected - using existing images"
-              BUILD_COMMAND="echo 'No rebuilds needed'"
-            fi
-          fi
+          scp -i ~/.ssh/id_rsa deploy.tar.gz ${{ secrets.EC2_HOST }}:~/flowscan-app/
           
           # Execute deployment commands
-          ssh -i ~/.ssh/id_rsa $REMOTE_HOST "
+          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_HOST }} "
             cd ~/flowscan-app && 
             tar -xzf deploy.tar.gz && 
             # Add AWS credentials for container itself
             echo 'AWS_ACCESS_KEY_ID=${{ secrets.REACT_APP_AWS_ACCESS_KEY_ID }}' >> .env &&
             echo 'AWS_SECRET_ACCESS_KEY=${{ secrets.REACT_APP_AWS_SECRET_ACCESS_KEY }}' >> .env &&
             echo 'AWS_REGION=${{ secrets.REACT_APP_AWS_REGION }}' >> .env &&
-            # Deploy with Docker Compose - selective rebuilds
+            # Deploy with Docker Compose
             docker-compose down &&
             docker-compose pull || true &&
-            $BUILD_COMMAND &&
+            docker-compose build --no-cache &&
             docker-compose up -d
           "
