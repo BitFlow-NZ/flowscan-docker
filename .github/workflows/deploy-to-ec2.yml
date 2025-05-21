@@ -34,7 +34,38 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          
+          # Print EC2 host info for debugging (IP only, no sensitive data)
+          echo "Connecting to host: $(echo ${{ secrets.EC2_HOST }} | cut -d '@' -f2)"
+          
+          # Try to verify SSH port is open
+          timeout 5 nc -z ${{ secrets.EC2_HOST }} 22 || echo "Warning: Cannot verify if port 22 is open"
+          
+          # Add retry logic for ssh-keyscan
+          for i in {1..5}; do
+            echo "Attempt $i: Running ssh-keyscan..."
+            if ssh-keyscan -T 10 -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts; then
+              echo "✓ Successfully added host to known_hosts"
+              break
+            else
+              echo "× ssh-keyscan failed, retrying in 3 seconds..."
+              sleep 3
+            fi
+            
+            # Exit with helpful message if all attempts fail
+            if [ $i -eq 5 ]; then
+              echo "ERROR: Could not connect to EC2 instance after 5 attempts"
+              echo "Please check:"
+              echo "- EC2 instance is running"
+              echo "- Security group allows SSH from GitHub Actions IPs"
+              echo "- EC2_HOST secret is correctly configured (e.g., ec2-user@11.22.33.44)"
+              exit 1
+            fi
+          done
+          
+          # Verify we have a valid known_hosts entry
+          echo "Known hosts content:"
+          cat ~/.ssh/known_hosts
       
       - name: Deploy to EC2
         run: |
