@@ -1,0 +1,60 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Create .env file
+        run: |
+          echo "DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}" > .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "VISION_KEY=${{ secrets.VISION_KEY }}" >> .env
+          echo "VISION_ENDPOINT=${{ secrets.VISION_ENDPOINT }}" >> .env
+          echo "REACT_APP_ENV=production" >> .env
+          echo "REACT_APP_AWS_ACCESS_KEY_ID=${{ secrets.REACT_APP_AWS_ACCESS_KEY_ID }}" >> .env
+          echo "REACT_APP_AWS_SECRET_ACCESS_KEY=${{ secrets.REACT_APP_AWS_SECRET_ACCESS_KEY }}" >> .env
+          echo "REACT_APP_AWS_BUCKET_NAME=${{ secrets.REACT_APP_AWS_BUCKET_NAME }}" >> .env
+          echo "REACT_APP_AWS_REGION=${{ secrets.REACT_APP_AWS_REGION }}" >> .env
+          echo "REACT_APP_API_URL=https://${{ secrets.EC2_DOMAIN }}/api" >> .env
+          echo "REACT_APP_IMG_URL=${{ secrets.REACT_APP_IMG_URL }}" >> .env
+          
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Deploy to EC2
+        run: |
+          # Create deployment package
+          tar -czf deploy.tar.gz .env docker-compose.yml API/ frontend/ image-recognition/ db/ nginx/
+          
+          # Transfer files
+          scp -i ~/.ssh/id_rsa deploy.tar.gz ec2-user@${{ secrets.EC2_HOST }}:~/flowscan-app/
+          
+          # Execute deployment commands
+          ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.EC2_HOST }} "
+            cd ~/flowscan-app && 
+            tar -xzf deploy.tar.gz && 
+            # Add AWS credentials for container itself
+            echo 'AWS_ACCESS_KEY_ID=${{ secrets.REACT_APP_AWS_ACCESS_KEY_ID }}' >> .env &&
+            echo 'AWS_SECRET_ACCESS_KEY=${{ secrets.REACT_APP_AWS_SECRET_ACCESS_KEY }}' >> .env &&
+            echo 'AWS_REGION=${{ secrets.REACT_APP_AWS_REGION }}' >> .env &&
+            # Deploy with Docker Compose
+            docker-compose down &&
+            docker-compose pull || true &&
+            docker-compose build --no-cache &&
+            docker-compose up -d
+          "
