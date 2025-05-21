@@ -33,56 +33,20 @@ jobs:
           echo "REACT_APP_API_URL=https://${{ secrets.EC2_DOMAIN }}/api" >> .env
           echo "REACT_APP_IMG_URL=${{ secrets.REACT_APP_IMG_URL }}" >> .env
           
-      - name: Set up SSH with improved debugging
+      - name: Set up SSH with environment variables
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          EC2_HOST_VALUE: ${{ secrets.EC2_HOST }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
-          # Extract host parts for better diagnostics
-          EC2_IP=$(echo "${{ secrets.EC2_HOST }}" | cut -d '@' -f2)
-          if [[ "${{ secrets.EC2_HOST }}" == *"@"* ]]; then
-            EC2_USER=$(echo "${{ secrets.EC2_HOST }}" | cut -d '@' -f1)
-            FULL_HOST="${{ secrets.EC2_HOST }}"
-          else
-            EC2_USER="ec2-user"
-            FULL_HOST="ec2-user@${{ secrets.EC2_HOST }}"
-            EC2_IP="${{ secrets.EC2_HOST }}"
-          fi
+          # Use environment variables
+          export EC2_HOST="$EC2_HOST_VALUE"
+          echo "Using host: $EC2_HOST"
           
-          echo "EC2 Username: $EC2_USER"
-          echo "EC2 IP: $EC2_IP"
-          echo "Full host: $FULL_HOST"
-          
-          # Test basic connectivity (ping)
-          echo "Testing basic connectivity..."
-          ping -c 3 $EC2_IP || echo "Warning: Cannot ping host - this is typical if ICMP is blocked"
-          
-          # Test TCP connectivity to SSH port
-          echo "Testing SSH port connectivity..."
-          nc -zv $EC2_IP 22 || echo "Warning: Cannot verify if port 22 is open"
-          
-          # Create a minimal SSH config with more debugging options
-          echo "Setting up SSH configuration..."
-          cat > ~/.ssh/config << EOF
-          Host ec2
-            HostName $EC2_IP
-            User $EC2_USER
-            IdentityFile ~/.ssh/id_rsa
-            StrictHostKeyChecking no
-            UserKnownHostsFile ~/.ssh/known_hosts
-            LogLevel DEBUG3
-          EOF
-          
-          chmod 600 ~/.ssh/config
-          
-          # Try a direct SSH connection with timeout
-          echo "Attempting direct SSH connection..."
-          timeout 10 ssh -v ec2 "echo SSH connection successful" || echo "Warning: Direct SSH test failed"
-          
-          # Try ssh-keyscan with the IP address directly
-          echo "Running ssh-keyscan with IP directly..."
-          ssh-keyscan -T 5 $EC2_IP >> ~/.ssh/known_hosts || echo "ssh-keyscan failed but continuing anyway"
+          # Rest of your script using $EC2_HOST instead of secrets.EC2_HOST
       
       - name: Deploy to EC2
         run: |
@@ -90,10 +54,10 @@ jobs:
           tar -czf deploy.tar.gz .env docker-compose.yml API/ frontend/ image-recognition/ db/ nginx/
           
           # Transfer files
-          scp -i ~/.ssh/id_rsa deploy.tar.gz ${{ secrets.EC2_HOST }}:~/flowscan-app/
+          scp -i ~/.ssh/id_rsa deploy.tar.gz $EC2_HOST:~/flowscan-app/
           
           # Execute deployment commands
-          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_HOST }} "
+          ssh -i ~/.ssh/id_rsa $EC2_HOST "
             cd ~/flowscan-app && 
             tar -xzf deploy.tar.gz && 
             # Add AWS credentials for container itself
