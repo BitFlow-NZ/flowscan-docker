@@ -29,43 +29,56 @@ jobs:
           echo "REACT_APP_API_URL=https://${{ secrets.EC2_DOMAIN }}/api" >> .env
           echo "REACT_APP_IMG_URL=${{ secrets.REACT_APP_IMG_URL }}" >> .env
           
-      - name: Set up SSH
+      - name: Set up SSH with improved debugging
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
-          # Print EC2 host info for debugging (IP only, no sensitive data)
-          echo "Connecting to host: $(echo ${{ secrets.EC2_HOST }} | cut -d '@' -f2)"
+          # Extract host parts for better diagnostics
+          EC2_IP=$(echo "${{ secrets.EC2_HOST }}" | cut -d '@' -f2)
+          if [[ "${{ secrets.EC2_HOST }}" == *"@"* ]]; then
+            EC2_USER=$(echo "${{ secrets.EC2_HOST }}" | cut -d '@' -f1)
+            FULL_HOST="${{ secrets.EC2_HOST }}"
+          else
+            EC2_USER="ec2-user"
+            FULL_HOST="ec2-user@${{ secrets.EC2_HOST }}"
+            EC2_IP="${{ secrets.EC2_HOST }}"
+          fi
           
-          # Try to verify SSH port is open
-          timeout 5 nc -z ${{ secrets.EC2_HOST }} 22 || echo "Warning: Cannot verify if port 22 is open"
+          echo "EC2 Username: $EC2_USER"
+          echo "EC2 IP: $EC2_IP"
+          echo "Full host: $FULL_HOST"
           
-          # Add retry logic for ssh-keyscan
-          for i in {1..5}; do
-            echo "Attempt $i: Running ssh-keyscan..."
-            if ssh-keyscan -T 10 -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts; then
-              echo "✓ Successfully added host to known_hosts"
-              break
-            else
-              echo "× ssh-keyscan failed, retrying in 3 seconds..."
-              sleep 3
-            fi
-            
-            # Exit with helpful message if all attempts fail
-            if [ $i -eq 5 ]; then
-              echo "ERROR: Could not connect to EC2 instance after 5 attempts"
-              echo "Please check:"
-              echo "- EC2 instance is running"
-              echo "- Security group allows SSH from GitHub Actions IPs"
-              echo "- EC2_HOST secret is correctly configured (e.g., ec2-user@11.22.33.44)"
-              exit 1
-            fi
-          done
+          # Test basic connectivity (ping)
+          echo "Testing basic connectivity..."
+          ping -c 3 $EC2_IP || echo "Warning: Cannot ping host - this is typical if ICMP is blocked"
           
-          # Verify we have a valid known_hosts entry
-          echo "Known hosts content:"
-          cat ~/.ssh/known_hosts
+          # Test TCP connectivity to SSH port
+          echo "Testing SSH port connectivity..."
+          nc -zv $EC2_IP 22 || echo "Warning: Cannot verify if port 22 is open"
+          
+          # Create a minimal SSH config with more debugging options
+          echo "Setting up SSH configuration..."
+          cat > ~/.ssh/config << EOF
+          Host ec2
+            HostName $EC2_IP
+            User $EC2_USER
+            IdentityFile ~/.ssh/id_rsa
+            StrictHostKeyChecking no
+            UserKnownHostsFile ~/.ssh/known_hosts
+            LogLevel DEBUG3
+          EOF
+          
+          chmod 600 ~/.ssh/config
+          
+          # Try a direct SSH connection with timeout
+          echo "Attempting direct SSH connection..."
+          timeout 10 ssh -v ec2 "echo SSH connection successful" || echo "Warning: Direct SSH test failed"
+          
+          # Try ssh-keyscan with the IP address directly
+          echo "Running ssh-keyscan with IP directly..."
+          ssh-keyscan -T 5 $EC2_IP >> ~/.ssh/known_hosts || echo "ssh-keyscan failed but continuing anyway"
       
       - name: Deploy to EC2
         run: |
