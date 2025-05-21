@@ -86,6 +86,9 @@ jobs:
           # Create deployment package
           tar -czf deploy.tar.gz .env docker-compose.yml API/ frontend/ image-recognition/ db/ nginx/
           
+          # Ensure the target directory exists on EC2
+          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_HOST }} "mkdir -p ~/flowscan-app/"
+
           # Transfer files
           scp -i ~/.ssh/id_rsa deploy.tar.gz ${{ secrets.EC2_HOST }}:~/flowscan-app/
           
