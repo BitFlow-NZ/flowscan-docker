@@ -36,15 +36,15 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           
           # Print EC2 host info for debugging (IP only, no sensitive data)
-          echo "Connecting to host: $(echo ${{ secrets.EC2_HOST }} | cut -d '@' -f2)"
+          echo "Connecting to host: $(echo ec2-user@${{ secrets.EC2_HOST }} | cut -d '@' -f2)"
           
           # Try to verify SSH port is open
-          timeout 5 nc -z ${{ secrets.EC2_HOST }} 22 || echo "Warning: Cannot verify if port 22 is open"
+          timeout 5 nc -z ec2-user@${{ secrets.EC2_HOST }} 22 || echo "Warning: Cannot verify if port 22 is open"
           
           # Add retry logic for ssh-keyscan
           for i in {1..5}; do
             echo "Attempt $i: Running ssh-keyscan..."
-            if ssh-keyscan -T 10 -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts; then
+            if ssh-keyscan -T 10 -H ec2-user@${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts; then
               echo "✓ Successfully added host to known_hosts"
               break
             else
