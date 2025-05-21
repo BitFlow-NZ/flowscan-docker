@@ -28,7 +28,14 @@ jobs:
           echo "REACT_APP_AWS_REGION=${{ secrets.REACT_APP_AWS_REGION }}" >> .env
           echo "REACT_APP_API_URL=https://${{ secrets.EC2_DOMAIN }}/api" >> .env
           echo "REACT_APP_IMG_URL=${{ secrets.REACT_APP_IMG_URL }}" >> .env
-          
+    
+      - name: Debug SSH Connection
+        run: |
+            echo "Checking EC2_HOST: ${{ secrets.EC2_HOST }}"
+            echo "Testing SSH connection..."
+            ssh -v -o StrictHostKeyChecking=no ${{ secrets.EC2_HOST }} exit
+        shell: bash
+
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
