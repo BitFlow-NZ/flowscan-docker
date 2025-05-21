@@ -5,10 +5,6 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  id-token: write
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -33,20 +29,43 @@ jobs:
           echo "REACT_APP_API_URL=https://${{ secrets.EC2_DOMAIN }}/api" >> .env
           echo "REACT_APP_IMG_URL=${{ secrets.REACT_APP_IMG_URL }}" >> .env
           
-      - name: Set up SSH with environment variables
-        env:
-          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          EC2_HOST_VALUE: ${{ secrets.EC2_HOST }}
+      - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
-          # Use environment variables
-          export EC2_HOST="$EC2_HOST_VALUE"
-          echo "Using host: $EC2_HOST"
+          # Print EC2 host info for debugging (IP only, no sensitive data)
+          echo "Connecting to host: $(echo ${{ secrets.EC2_HOST }} | cut -d '@' -f2)"
           
-          # Rest of your script using $EC2_HOST instead of secrets.EC2_HOST
+          # Try to verify SSH port is open
+          timeout 5 nc -z ${{ secrets.EC2_HOST }} 22 || echo "Warning: Cannot verify if port 22 is open"
+          
+          # Add retry logic for ssh-keyscan
+          for i in {1..5}; do
+            echo "Attempt $i: Running ssh-keyscan..."
+            if ssh-keyscan -T 10 -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts; then
+              echo "✓ Successfully added host to known_hosts"
+              break
+            else
+              echo "× ssh-keyscan failed, retrying in 3 seconds..."
+              sleep 3
+            fi
+            
+            # Exit with helpful message if all attempts fail
+            if [ $i -eq 5 ]; then
+              echo "ERROR: Could not connect to EC2 instance after 5 attempts"
+              echo "Please check:"
+              echo "- EC2 instance is running"
+              echo "- Security group allows SSH from GitHub Actions IPs"
+              echo "- EC2_HOST secret is correctly configured (e.g., ec2-user@11.22.33.44)"
+              exit 1
+            fi
+          done
+          
+          # Verify we have a valid known_hosts entry
+          echo "Known hosts content:"
+          cat ~/.ssh/known_hosts
       
       - name: Deploy to EC2
         run: |
@@ -54,10 +73,10 @@ jobs:
           tar -czf deploy.tar.gz .env docker-compose.yml API/ frontend/ image-recognition/ db/ nginx/
           
           # Transfer files
-          scp -i ~/.ssh/id_rsa deploy.tar.gz $EC2_HOST:~/flowscan-app/
+          scp -i ~/.ssh/id_rsa deploy.tar.gz ${{ secrets.EC2_HOST }}:~/flowscan-app/
           
           # Execute deployment commands
-          ssh -i ~/.ssh/id_rsa $EC2_HOST "
+          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_HOST }} "
             cd ~/flowscan-app && 
             tar -xzf deploy.tar.gz && 
             # Add AWS credentials for container itself
