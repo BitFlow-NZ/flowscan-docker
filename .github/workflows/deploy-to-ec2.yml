@@ -2,7 +2,7 @@ name: Deploy to EC2
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -32,7 +32,7 @@ jobs:
           echo "REACT_APP_AWS_REGION=${{ secrets.REACT_APP_AWS_REGION }}" >> .env
           echo "REACT_APP_API_URL=https://${{ secrets.EC2_DOMAIN }}/api" >> .env
           echo "REACT_APP_IMG_URL=${{ secrets.REACT_APP_IMG_URL }}" >> .env
-    
+
       - name: Verify secrets presence
         run: |
           echo "Testing if secrets are accessible..."
@@ -41,7 +41,7 @@ jobs:
           else
             echo "❌ EC2_HOST secret is empty or inaccessible"
           fi
-          
+
           if [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
             echo "✅ SSH_PRIVATE_KEY secret exists"
           else
@@ -51,21 +51,21 @@ jobs:
       - name: Set up SSH with fixed host
         run: |
           mkdir -p ~/.ssh
-          
+
           # Use the SSH key from secrets
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          
+
           # Hardcode the EC2 IP for testing (remove this hardcoding later)
-          REMOTE_HOST="ec2-user@13.239.232.171"
-          
+          REMOTE_HOST="ec2-user@3.104.151.141"
+
           echo "Connecting to host: $REMOTE_HOST"
-          
+
           # Try to verify SSH port is open
           nc -zv $(echo $REMOTE_HOST | cut -d '@' -f2) 22 || echo "Warning: Cannot verify if port 22 is open"
-          
+
           # Add retry logic for ssh-keyscan with the hardcoded IP
-          EC2_IP="13.239.232.171"
+          EC2_IP="3.104.151.141"
           for i in {1..3}; do
             echo "Attempt $i: Running ssh-keyscan..."
             if ssh-keyscan -T 10 $EC2_IP >> ~/.ssh/known_hosts; then
@@ -76,7 +76,7 @@ jobs:
               sleep 3
             fi
           done
-          
+
           # Test connection with verbose output
           echo "Testing SSH connection directly..."
           ssh -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $REMOTE_HOST "echo Connection successful"
@@ -85,13 +85,13 @@ jobs:
         run: |
           # Create deployment package
           tar -czf deploy.tar.gz .env docker-compose.yml API/ frontend/ image-recognition/ db/ nginx/
-          
+
           # Ensure the target directory exists on EC2
           ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_HOST }} "mkdir -p ~/flowscan-app/"
 
           # Transfer files
           scp -i ~/.ssh/id_rsa deploy.tar.gz ${{ secrets.EC2_HOST }}:~/flowscan-app/
-          
+
           # Execute deployment commands
           ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_HOST }} "
             cd ~/flowscan-app && 
